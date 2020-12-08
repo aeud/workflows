@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"google.golang.org/api/idtoken"
@@ -13,6 +14,9 @@ var (
 )
 
 func generateJWT(aud string) (string, error) {
+	if authJWT := os.Getenv("WORKFLOW_TR_AUTH_JWT"); authJWT != "" {
+		return authJWT, nil
+	}
 	if token != "" && expirationDate.Sub(time.Now()).Seconds() > 100 {
 		return token, nil
 	}
