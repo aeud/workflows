@@ -1,0 +1,5 @@
+steps:
+  - id: step_1
+    task:
+      imageUri: eu.gcr.io/grp-sta-atom-prj-aelab/images/hello-world
+  
