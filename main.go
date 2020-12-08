@@ -11,6 +11,7 @@ import (
 var (
 	flagDAGPath            string
 	flagTaskRunnerHostname string
+	flagTaskRunnerAuthJWT  string
 )
 
 func exec(path string) error {
@@ -28,12 +29,15 @@ func exec(path string) error {
 func init() {
 	flag.StringVar(&flagDAGPath, "dag-path", "", "Path to the DAG you want to execute")
 	flag.StringVar(&flagTaskRunnerHostname, "tr-hostname", "", "Hostname of the Task Runner")
+	flag.StringVar(&flagTaskRunnerAuthJWT, "tr-auth-jwt", "", "JWT to use to connect to the Task Runner")
 
 	flag.Parse()
 
 	log.Printf("Using the Task Runner hostname: %s", flagTaskRunnerHostname)
 
 	os.Setenv("TASK_RUNNER_HOSTNAME", flagTaskRunnerHostname)
+
+	os.Setenv("WORKFLOW_TR_AUTH_JWT", flagTaskRunnerAuthJWT)
 
 	if flagDAGPath == "" {
 		log.Fatal("dag-path is mandatory")
