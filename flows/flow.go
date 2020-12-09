@@ -11,29 +11,29 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type Flow struct {
-	Name      string     `yaml:"name" json:"name"`
-	Steps     []FlowStep `yaml:"steps" json:"steps"`
-	directory map[string]FlowStep
+type Workflow struct {
+	Name      string         `yaml:"name" json:"name"`
+	Steps     []WorkflowStep `yaml:"steps" json:"steps"`
+	directory map[string]WorkflowStep
 }
 
-func (f *Flow) JSON() []byte {
+func (f *Workflow) JSON() []byte {
 	bs, _ := json.Marshal(f)
 	return bs
 }
 
-func (f *Flow) YAML() []byte {
+func (f *Workflow) YAML() []byte {
 	bs, _ := yaml.Marshal(f)
 	return bs
 }
 
-func (f *Flow) Graph() dag.Graph {
-	f.directory = make(map[string]FlowStep)
+func (f *Workflow) Graph() dag.Graph {
+	f.directory = make(map[string]WorkflowStep)
 	graph := dag.Graph{}
-	originRoot, targetRoot := FlowStep{
+	originRoot, targetRoot := WorkflowStep{
 		ID:              "origin_root",
 		ignoreExecution: true,
-	}, FlowStep{
+	}, WorkflowStep{
 		ID:              "target_root",
 		ignoreExecution: true,
 	}
@@ -54,13 +54,13 @@ func (f *Flow) Graph() dag.Graph {
 	return graph
 }
 
-func (f *Flow) DAG() dag.AcyclicGraph {
+func (f *Workflow) DAG() dag.AcyclicGraph {
 	return dag.AcyclicGraph{
 		Graph: f.Graph(),
 	}
 }
 
-func (f *Flow) Walk() error {
+func (f *Workflow) Walk() error {
 	g := f.DAG()
 	diagnostics := g.Walk(walkFunction)
 	errors := make([]string, 0)
@@ -76,7 +76,7 @@ func (f *Flow) Walk() error {
 	return nil
 }
 
-type FlowStep struct {
+type WorkflowStep struct {
 	ID              string       `yaml:"id" json:"id"`
 	Description     string       `yaml:"description" json:"description"`
 	DependsOn       *[]string    `yaml:"dependsOn" json:"depends_on"`
@@ -85,7 +85,7 @@ type FlowStep struct {
 	flowName        string
 }
 
-func (s *FlowStep) Run() error {
+func (s *WorkflowStep) Run() error {
 	if s.Task == nil || s.ignoreExecution {
 		return nil
 	}

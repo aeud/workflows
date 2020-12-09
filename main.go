@@ -9,9 +9,9 @@ import (
 )
 
 var (
-	flagDAGPath            string
-	flagTaskRunnerHostname string
-	flagTaskRunnerAuthJWT  string
+	flagWorkflowPath      string
+	flagTaskRunnerURL     string
+	flagTaskRunnerAuthJWT string
 )
 
 func exec(path string) error {
@@ -27,30 +27,30 @@ func exec(path string) error {
 }
 
 func init() {
-	flag.StringVar(&flagDAGPath, "dag-path", "", "Path to the DAG you want to execute")
-	flag.StringVar(&flagTaskRunnerHostname, "tr-hostname", "", "Hostname of the Task Runner")
+	flag.StringVar(&flagWorkflowPath, "workflow-path", "", "Path to the Workflow you want to execute")
+	flag.StringVar(&flagTaskRunnerURL, "tr-url", "", "URL of the Task Runner. Should look like `https://xxxxxxxx-yyyy-zz.a.run.app`")
 	flag.StringVar(&flagTaskRunnerAuthJWT, "tr-auth-jwt", "", "JWT to use to connect to the Task Runner")
 
 	flag.Parse()
 
-	log.Printf("Using the Task Runner hostname: %s", flagTaskRunnerHostname)
+	log.Printf("Using the Task Runner url: %s", flagTaskRunnerURL)
 
-	os.Setenv("TASK_RUNNER_HOSTNAME", flagTaskRunnerHostname)
+	os.Setenv("TASK_RUNNER_URL", flagTaskRunnerURL)
 
 	os.Setenv("WORKFLOW_TR_AUTH_JWT", flagTaskRunnerAuthJWT)
 
-	if flagDAGPath == "" {
-		log.Fatal("dag-path is mandatory")
+	if flagWorkflowPath == "" {
+		log.Fatal("workflow-path is mandatory")
 	}
-	if flagTaskRunnerHostname == "" {
-		log.Fatal("tr-hostname is mandatory")
+	if flagTaskRunnerURL == "" {
+		log.Fatal("`tr-url` parameter is mandatory")
 	}
 }
 
 func main() {
 	start := time.Now()
-	if err := exec(flagDAGPath); err != nil {
-		log.Fatalf("Flow %s failed in %s. %s.", flagDAGPath, time.Now().Sub(start), err)
+	if err := exec(flagWorkflowPath); err != nil {
+		log.Fatalf("Flow %s failed in %s. %s.", flagWorkflowPath, time.Now().Sub(start), err)
 	}
-	log.Printf("Flow %s ran with success in %s.", flagDAGPath, time.Now().Sub(start))
+	log.Printf("Flow %s ran with success in %s.", flagWorkflowPath, time.Now().Sub(start))
 }

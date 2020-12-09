@@ -12,12 +12,12 @@ const (
 	FormatJSON = "json"
 )
 
-func NewFlowFromYAMLFile(filePath string) (Flow, error) {
+func NewFlowFromYAMLFile(filePath string) (Workflow, error) {
 	return NewFlowFromFile(filePath, FormatYAML)
 }
 
-func NewFlowFromFile(filePath, format string) (Flow, error) {
-	flow := Flow{}
+func NewFlowFromFile(filePath, format string) (Workflow, error) {
+	flow := Workflow{}
 	file, err := OpenFromPath(filePath)
 	if err != nil {
 		return flow, err

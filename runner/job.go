@@ -10,14 +10,14 @@ import (
 	"os"
 )
 
-func TaskRunnerAPIHost() string {
-	return os.Getenv("TASK_RUNNER_HOSTNAME")
+func TaskRunnerAPIURL() string {
+	return os.Getenv("TASK_RUNNER_URL")
 }
 func TaskRunnerAPIJob() string {
-	return fmt.Sprintf("%s/%s", TaskRunnerAPIHost(), "job")
+	return fmt.Sprintf("%s/%s", TaskRunnerAPIURL(), "job")
 }
 func TaskRunnerAPIJobStatus() string {
-	return fmt.Sprintf("%s/%s", TaskRunnerAPIHost(), "jobstatus")
+	return fmt.Sprintf("%s/%s", TaskRunnerAPIURL(), "jobstatus")
 }
 
 type Job struct {
@@ -29,8 +29,10 @@ type TaskRunnerAPIResponse struct {
 	Job *Job `json:"job"`
 }
 
+// DecorateRequestWithAuthentification takes an http.Request, and add the
+// calculated (or provided) JWT in the Authorization: Bearer header.
 func DecorateRequestWithAuthentification(req *http.Request) error {
-	token, err := generateJWT(TaskRunnerAPIHost())
+	token, err := generateJWT(TaskRunnerAPIURL())
 	if err != nil {
 		return err
 	}

@@ -3,6 +3,8 @@ package runner
 import (
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -14,9 +16,8 @@ const (
 	StateLoading   JobState = JobState("LOADING")
 	StateNew       JobState = JobState("NEW")
 	// Define the check state and timeout duration when getting the Job State
-	CheckStateDuration = 10 * time.Second
-	// CheckStateDuration = 100 * time.Millisecond
-	TimeoutDuration = 10 * time.Hour
+	DefaultCheckStateDuration = 10 * time.Second
+	DefaultTimeoutDuration    = 10 * time.Hour
 )
 
 type Execution struct {
@@ -61,10 +62,26 @@ func (e *Execution) sendToTaskRunnerEngine() error {
 	return nil
 }
 
+func DurationgBetweenChecks() time.Duration {
+	def := DefaultCheckStateDuration
+	if s := os.Getenv("WORKFLOW_CHECK_STATE_DURATION_SEC"); s != "" {
+		v, err := strconv.ParseInt(s, 10, 32)
+		if err != nil {
+			log.Printf("Cannot parse the WORKFLOW_CHECK_STATE_DURATION_SEC %s value. Using default: %s", s, def)
+		}
+		return time.Duration(v) * time.Second
+	}
+	return def
+}
+
+func DurationgBeforeCheckTimeout() time.Duration {
+	return DefaultTimeoutDuration
+}
+
 func asyncCheckState(e *Execution) {
-	duration := CheckStateDuration
+	duration := DurationgBetweenChecks()
 	t := time.NewTicker(duration)
-	tErr := time.NewTicker(TimeoutDuration)
+	tErr := time.NewTicker(DurationgBeforeCheckTimeout())
 	for {
 		select {
 		case <-t.C:
