@@ -8,9 +8,15 @@ hostname (scheme + hotname) and will execute it.
 ### Parameters
 | Parameter | Description | Default Value | Example | Optional |
 | ------------- |-------------|-----|-----|:-----:|
-| --dag-path | Path to the DAG you want to execute |  |gs://your-bucket/dags/your-dag.yaml | N |
-| --tr-hostname | Hostname of the Task Runner |  |https://taskrunnermock-rps3r5yvgq-ew.a.run.app | N |
+| --workflow-path | Path to the Workflow you want to execute |  |gs://your-bucket/workflows/your-workflow.yaml | N |
+| --tr-url | URL of the Task Runner |  |https://taskrunnermock-rps3r5yvgq-ew.a.run.app | N |
 | --tr-auth-jwt | JWT to use to connect to the Task Runner |  |xxx.yyy.zzz | Y |
+
+### Environment variables
+| Variable | Description | Default Value |
+| ------------- |-------------|-----|-----|:-----:|
+| WORKFLOW_CHECK_STATE_DURATION_SEC | Number of seconds to wait between 2 calls to the Task Runner Check | 10 |
+| GOOGLE_APPLICATION_CREDENTIAL | Path to your Google Credential Key | - |
 
 ## Development environment
 ### How to use a local Mock for the Task Runner
@@ -41,8 +47,8 @@ docker run \
 #### Run your workflow task
 ```
 go run main.go \
-    --dag-path=./dags/fork_join_dag.yaml \
-    --tr-hostname=http://localhost:8080 \
+    --workflow-path=./dags/fork_join_dag.yaml \
+    --tr-url=http://localhost:8080 \
     --tr-auth-jwt=none
 ```
 
@@ -61,8 +67,8 @@ gcloud run deploy \
 #### Run your workflow task
 ```
 go run main.go \
-    --dag-path=./dags/fork_join_dag.yaml \
-    --tr-hostname=https://taskrunnermock-rps3r5yvgq-ew.a.run.app \
+    --workflow-path=./dags/fork_join_dag.yaml \
+    --tr-url=https://taskrunnermock-rps3r5yvgq-ew.a.run.app \
     --tr-auth-jwt=$(gcloud auth print-identity-token)
 ```
 
