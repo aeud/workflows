@@ -11,21 +11,22 @@ import (
 type JobState string
 
 const (
-	StateSucceeded JobState = JobState("SUCCEEDED")
-	StateFailed    JobState = JobState("FAILED")
-	StateLoading   JobState = JobState("LOADING")
-	StateNew       JobState = JobState("NEW")
+	StateSucceeded  JobState = JobState("SUCCEEDED")
+	StateQueued     JobState = JobState("QUEUED")
+	StateCancelling JobState = JobState("CANCELLING")
+	StateCancelled  JobState = JobState("CANCELLED")
+	StateFailed     JobState = JobState("FAILED")
+	StateLoading    JobState = JobState("LOADING")
+	StateNew        JobState = JobState("NEW")
 	// Define the check state and timeout duration when getting the Job State
 	DefaultCheckStateDuration = 10 * time.Second
 	DefaultTimeoutDuration    = 10 * time.Hour
 )
 
 type Execution struct {
-	State JobState `json:"state"`
-	// ErrorMessage      string   `json:"-"`
-	// Message           string   `json:"-"`
-	JobID             string `json:"jobId"`
-	task              *Task  `json:"-"`
+	State             JobState `json:"state"`
+	JobID             string   `json:"jobId"`
+	task              *Task    `json:"-"`
 	asyncErrorHandler chan error
 }
 
@@ -39,7 +40,6 @@ func (e *Execution) UpdateState(s JobState) {
 func NewExecution(t *Task) (*Execution, error) {
 	e := &Execution{
 		State:             StateNew,
-		JobID:             "(not attributed yet)",
 		task:              t,
 		asyncErrorHandler: make(chan error),
 	}
@@ -50,13 +50,11 @@ func NewExecution(t *Task) (*Execution, error) {
 }
 
 func (e *Execution) sendToTaskRunnerEngine() error {
-	e.UpdateState(StateLoading)
 	v, err := TaskRunnerNewJob(e.task)
 	if err != nil {
 		return err
 	}
 	e.JobID = v.Job.JobID
-	e.UpdateState(JobState(v.Job.State))
 	log.Printf("new job inserted in the Task Runner (job_id: %s)", e.JobID)
 	go asyncCheckState(e)
 	return nil
@@ -96,6 +94,8 @@ func asyncCheckState(e *Execution) {
 				e.asyncErrorHandler <- nil
 				return
 			case StateFailed:
+			case StateCancelling:
+			case StateCancelled:
 				e.asyncErrorHandler <- fmt.Errorf("job %s (%s) failed", e.task.Name, e.JobID)
 				return
 			default:

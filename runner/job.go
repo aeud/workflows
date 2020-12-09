@@ -20,13 +20,8 @@ func TaskRunnerAPIJobStatus() string {
 	return fmt.Sprintf("%s/%s", TaskRunnerAPIURL(), "jobstatus")
 }
 
-type Job struct {
-	JobID string `json:"job_id"`
-	State string `json:"state"`
-}
-
 type TaskRunnerAPIResponse struct {
-	Job *Job `json:"job"`
+	Job *Execution `json:"job"`
 }
 
 // DecorateRequestWithAuthentification takes an http.Request, and add the
