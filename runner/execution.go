@@ -21,26 +21,26 @@ const (
 )
 
 type Execution struct {
-	State             JobState
-	ErrorMessage      string
-	Message           string
-	Task              *Task
-	JobID             string
+	State JobState `json:"state"`
+	// ErrorMessage      string   `json:"-"`
+	// Message           string   `json:"-"`
+	JobID             string `json:"jobId"`
+	task              *Task  `json:"-"`
 	asyncErrorHandler chan error
 }
 
 func (e *Execution) UpdateState(s JobState) {
 	if e.State != s {
 		e.State = s
-		log.Printf("job %s (%s) changed to state %s", e.JobID, e.Task.Name, s)
+		log.Printf("job %s (%s) changed to state %s", e.JobID, e.task.Name, s)
 	}
 }
 
 func NewExecution(t *Task) (*Execution, error) {
 	e := &Execution{
 		State:             StateNew,
-		Task:              t,
 		JobID:             "(not attributed yet)",
+		task:              t,
 		asyncErrorHandler: make(chan error),
 	}
 	if err := e.sendToTaskRunnerEngine(); err != nil {
@@ -51,7 +51,7 @@ func NewExecution(t *Task) (*Execution, error) {
 
 func (e *Execution) sendToTaskRunnerEngine() error {
 	e.UpdateState(StateLoading)
-	v, err := TaskRunnerNewJob(e.Task)
+	v, err := TaskRunnerNewJob(e.task)
 	if err != nil {
 		return err
 	}
@@ -96,14 +96,14 @@ func asyncCheckState(e *Execution) {
 				e.asyncErrorHandler <- nil
 				return
 			case StateFailed:
-				e.asyncErrorHandler <- fmt.Errorf("job %s (%s) failed", e.Task.Name, e.JobID)
+				e.asyncErrorHandler <- fmt.Errorf("job %s (%s) failed", e.task.Name, e.JobID)
 				return
 			default:
-				log.Printf("checking state for job %s (%s) in %s", e.JobID, e.Task.Name, duration)
+				log.Printf("checking state for job %s (%s) in %s", e.JobID, e.task.Name, duration)
 			}
 
 		case <-tErr.C:
-			e.asyncErrorHandler <- fmt.Errorf("timeout state check for job %s (%s)", e.JobID, e.Task.Name)
+			e.asyncErrorHandler <- fmt.Errorf("timeout state check for job %s (%s)", e.JobID, e.task.Name)
 			return
 		}
 	}
