@@ -76,7 +76,9 @@ func TaskRunnerCheckExecution(e *Execution) (*TaskRunnerAPIResponse, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	v := TaskRunnerAPIResponse{}
+	v := TaskRunnerAPIResponse{
+		Job: e,
+	}
 	if err := json.NewDecoder(resp.Body).Decode(&v); err != nil {
 		return nil, err
 	}

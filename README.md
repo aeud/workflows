@@ -92,3 +92,16 @@ docker build -t workflow .
 docker tag workflow eu.gcr.io/$PROJECT_ID/images/workflow          
 docker push eu.gcr.io/$PROJECT_ID/images/workflow
 ```
+
+```
+docker build -t atom_tasks_workflow -f ./Dockerfile_edge .
+docker tag atom_tasks_workflow eu.gcr.io/grp-sta-atom-prj-aelab/edge/workflow
+docker push eu.gcr.io/grp-sta-atom-prj-aelab/edge/workflow
+gcloud run deploy task-edge-workflow \
+    --image eu.gcr.io/grp-sta-atom-prj-aelab/edge/workflow \
+    --platform managed \
+    --project=grp-sta-atom-prj-aelab \
+    --set-env-vars=TASK_RUNNER_URL=https://taskrunner-rps3r5yvgq-ew.a.run.app \
+    --region=europe-west1 \
+    --no-allow-unauthenticated
+```

@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -24,40 +25,40 @@ const (
 )
 
 type Execution struct {
-	State             JobState `json:"state"`
-	JobID             string   `json:"jobId"`
-	task              *Task    `json:"-"`
+	State   JobState `json:"state"`
+	JobID   string   `json:"jobId"`
+	Message string   `json:"message"`
+	// task              *Task    `json:"-"`
 	asyncErrorHandler chan error
+	async             bool
 }
 
-func (e *Execution) UpdateState(s JobState) {
-	if e.State != s {
-		e.State = s
-		log.Printf("job %s (%s) changed to state %s", e.JobID, e.task.Name, s)
+func (e *Execution) JSON() []byte {
+	bs, _ := json.Marshal(e)
+	return bs
+}
+
+func (e *Execution) UpdateState() error {
+	if _, err := TaskRunnerCheckExecution(e); err != nil {
+		return err
 	}
+	return nil
 }
 
 func NewExecution(t *Task) (*Execution, error) {
-	e := &Execution{
-		State:             StateNew,
-		task:              t,
-		asyncErrorHandler: make(chan error),
-	}
-	if err := e.sendToTaskRunnerEngine(); err != nil {
+	resp, err := TaskRunnerNewJob(t)
+	if err != nil {
 		return nil, err
 	}
-	return e, nil
-}
-
-func (e *Execution) sendToTaskRunnerEngine() error {
-	v, err := TaskRunnerNewJob(e.task)
-	if err != nil {
-		return err
-	}
-	e.JobID = v.Job.JobID
+	e := resp.Job
 	log.Printf("new job inserted in the Task Runner (job_id: %s)", e.JobID)
-	go asyncCheckState(e)
-	return nil
+	state := e.State
+	if state == StateQueued {
+		e.async = true
+		e.asyncErrorHandler = make(chan error)
+		go asyncCheckState(e)
+	}
+	return e, nil
 }
 
 func DurationgBetweenChecks() time.Duration {
@@ -83,12 +84,10 @@ func asyncCheckState(e *Execution) {
 	for {
 		select {
 		case <-t.C:
-			v, err := TaskRunnerCheckExecution(e)
-			if err != nil {
+			if err := e.UpdateState(); err != nil {
 				e.asyncErrorHandler <- err
 				return
 			}
-			e.UpdateState(JobState(v.Job.State))
 			switch state := e.State; state {
 			case StateSucceeded:
 				e.asyncErrorHandler <- nil
@@ -96,19 +95,22 @@ func asyncCheckState(e *Execution) {
 			case StateFailed:
 			case StateCancelling:
 			case StateCancelled:
-				e.asyncErrorHandler <- fmt.Errorf("job %s (%s) failed", e.task.Name, e.JobID)
+				e.asyncErrorHandler <- fmt.Errorf("job %s failed", e.JobID)
 				return
 			default:
-				log.Printf("checking state for job %s (%s) in %s", e.JobID, e.task.Name, duration)
+				log.Printf("checking state for job %s in %s", e.JobID, duration)
 			}
 
 		case <-tErr.C:
-			e.asyncErrorHandler <- fmt.Errorf("timeout state check for job %s (%s)", e.JobID, e.task.Name)
+			e.asyncErrorHandler <- fmt.Errorf("timeout state check for job %s", e.JobID)
 			return
 		}
 	}
 }
 
 func (e *Execution) Wait() error {
-	return <-e.asyncErrorHandler
+	if e.async {
+		return <-e.asyncErrorHandler
+	}
+	return nil
 }
