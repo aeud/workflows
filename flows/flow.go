@@ -3,6 +3,7 @@ package flows
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"workflows/runner"
 
@@ -90,8 +91,16 @@ func (s *WorkflowStep) Run() error {
 		return nil
 	}
 	task := s.Task
+	if task.Labels == nil {
+		task.Labels = make(map[string]string)
+	}
+	task.Labels["workflow"] = os.Getenv("DAG_FILE_NAME")
+	task.Labels["type"] = "step"
 	if task.Name == "" {
 		task.Name = s.ID
+	}
+	if task.ScaleTier == "" {
+		task.ScaleTier = "BASIC"
 	}
 	execution, err := task.Run()
 	if err != nil {

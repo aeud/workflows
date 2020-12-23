@@ -2,17 +2,17 @@ steps:
   - id: step_1
     task:
       name: step_1
-      imageUri: eu.gcr.io/grp-sta-atom-prj-aelab/images/hello-world
+      imageUri: eu.gcr.io/grp-sta-lab-prj-cm/hello
   - id: step_2
     task:
-      imageUri: eu.gcr.io/grp-sta-atom-prj-aelab/images/hello-world
+      imageUri: eu.gcr.io/grp-sta-lab-prj-cm/hello
       args: []
     dependsOn: ['step_1']
   - id: step_3
     task:
-      imageUri: eu.gcr.io/grp-sta-atom-prj-aelab/images/hello-world
+      imageUri: eu.gcr.io/grp-sta-lab-prj-cm/hello
     dependsOn: ['step_1']
   - id: step_4
     task:
-      imageUri: eu.gcr.io/grp-sta-atom-prj-aelab/images/hello-world
+      imageUri: eu.gcr.io/grp-sta-lab-prj-cm/hello2
     dependsOn: ['step_2', 'step_3']

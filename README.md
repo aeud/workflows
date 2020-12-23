@@ -25,7 +25,7 @@ hostname (scheme + hotname) and will execute it.
 ```
 git clone https://github.com/lvmh-group/atom-container-kernel-task-runner.git
 cd atom-container-kernel-task-runner
-git checkout mock
+git checkout ae
 ```
 
 #### Build the Docker image
@@ -55,12 +55,14 @@ go run main.go \
 ### How to use a Mock for the Task Runner on Cloud Run
 #### Build and deploy your image
 ```
-export PROJECT_ID=grp-sta-atom-prj-aelab
+export PROJECT_ID=grp-sta-lab-prj-cm
+docker build -t task_runner:mock .
 docker tag task_runner:mock eu.gcr.io/${PROJECT_ID}/run/task_runner:mock
 docker push eu.gcr.io/${PROJECT_ID}/run/task_runner:mock
 gcloud run deploy \
     --image eu.gcr.io/${PROJECT_ID}/run/task_runner:mock \
     --platform managed \
+    --update-env-vars PROJECT_ID=${PROJECT_ID} \
     --project=${PROJECT_ID}
 # it will return your endpoint (i.e. https://taskrunnermock-rps3r5yvgq-ew.a.run.app)
 ```
@@ -85,23 +87,37 @@ comes from the `google.golang.org/api/idtoken` modules. You will get the followi
 error message: idtoken: credential must be service_account, found "authorized_user".
 ```
 
+The SA used for the Task should have the following permission
+```
+storage.objects.get
+run.routes.invoke
+```
+Includes in the following roles :
+```
+roles/storage.objectViewer
+roles/run.invoker
+```
+
+The ML service Agent already has the storage permission but need to have the Cloud Run one. The default SA used by the AI Platform is the following one: `service-<PROJECT_NUMBER>@cloud-ml.google.com.iam.gserviceaccount.com`
+
 ## [DEV] Deployment
 ```
-PROJECT_ID=grp-sta-atom-prj-aelab
+PROJECT_ID=grp-sta-lab-prj-cm
 docker build -t workflow .
 docker tag workflow eu.gcr.io/$PROJECT_ID/images/workflow          
 docker push eu.gcr.io/$PROJECT_ID/images/workflow
 ```
 
 ```
+PROJECT_ID=grp-sta-lab-prj-cm
 docker build -t atom_tasks_workflow -f ./Dockerfile_edge .
-docker tag atom_tasks_workflow eu.gcr.io/grp-sta-atom-prj-aelab/edge/workflow
-docker push eu.gcr.io/grp-sta-atom-prj-aelab/edge/workflow
+docker tag atom_tasks_workflow eu.gcr.io/$PROJECT_ID/edge/workflow
+docker push eu.gcr.io/$PROJECT_ID/edge/workflow
 gcloud run deploy task-edge-workflow \
-    --image eu.gcr.io/grp-sta-atom-prj-aelab/edge/workflow \
+    --image eu.gcr.io/$PROJECT_ID/edge/workflow \
     --platform managed \
-    --project=grp-sta-atom-prj-aelab \
-    --set-env-vars=TASK_RUNNER_URL=https://taskrunner-rps3r5yvgq-ew.a.run.app \
+    --project=$PROJECT_ID \
+    --set-env-vars=TASK_RUNNER_URL=https://taskrunner-j7s6l5wnca-ew.a.run.app \
     --region=europe-west1 \
     --no-allow-unauthenticated
 ```

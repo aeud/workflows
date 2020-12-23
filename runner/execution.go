@@ -12,13 +12,14 @@ import (
 type JobState string
 
 const (
-	StateSucceeded  JobState = JobState("SUCCEEDED")
-	StateQueued     JobState = JobState("QUEUED")
-	StateCancelling JobState = JobState("CANCELLING")
-	StateCancelled  JobState = JobState("CANCELLED")
-	StateFailed     JobState = JobState("FAILED")
-	StateLoading    JobState = JobState("LOADING")
-	StateNew        JobState = JobState("NEW")
+	StateSucceeded   JobState = JobState("SUCCEEDED")
+	StatePreparing   JobState = JobState("PREPARING")
+	StateQueued      JobState = JobState("QUEUED")
+	StateRunning     JobState = JobState("RUNNING")
+	StateCancelling  JobState = JobState("CANCELLING")
+	StateCancelled   JobState = JobState("CANCELLED")
+	StateFailed      JobState = JobState("FAILED")
+	StateUnspecified JobState = JobState("STATE_UNSPECIFIED")
 	// Define the check state and timeout duration when getting the Job State
 	DefaultCheckStateDuration = 10 * time.Second
 	DefaultTimeoutDuration    = 10 * time.Hour
@@ -61,6 +62,7 @@ func NewExecution(t *Task) (*Execution, error) {
 	return e, nil
 }
 
+// TODO to change (no env variables...)
 func DurationgBetweenChecks() time.Duration {
 	def := DefaultCheckStateDuration
 	if s := os.Getenv("WORKFLOW_CHECK_STATE_DURATION_SEC"); s != "" {
@@ -73,6 +75,7 @@ func DurationgBetweenChecks() time.Duration {
 	return def
 }
 
+// TODO to change (no env variables...) on the same model that before
 func DurationgBeforeCheckTimeout() time.Duration {
 	return DefaultTimeoutDuration
 }
@@ -93,7 +96,8 @@ func asyncCheckState(e *Execution) {
 				e.asyncErrorHandler <- nil
 				return
 			case StateFailed:
-			case StateCancelling:
+				e.asyncErrorHandler <- fmt.Errorf("job %s failed", e.JobID)
+				return
 			case StateCancelled:
 				e.asyncErrorHandler <- fmt.Errorf("job %s failed", e.JobID)
 				return

@@ -1,0 +1,4 @@
+steps:
+  - id: step_error
+    task:
+      imageUri: eu.gcr.io/grp-sta-lab-prj-cm/error

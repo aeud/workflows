@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 	"workflows/flows"
 )
@@ -30,14 +32,13 @@ func exec(path string) error {
 }
 
 func init() {
+	log.SetFlags(0)
 	if engine := os.Getenv("ENGINE"); engine != "EDGE" {
 		flag.StringVar(&flagWorkflowPath, "workflow-path", "", "Path to the Workflow you want to execute")
 		flag.StringVar(&flagTaskRunnerURL, "tr-url", "", "URL of the Task Runner. Should look like `https://xxxxxxxx-yyyy-zz.a.run.app`")
 		flag.StringVar(&flagTaskRunnerAuthJWT, "tr-auth-jwt", "", "JWT to use to connect to the Task Runner")
 
 		flag.Parse()
-
-		log.Printf("Using the Task Runner url: %s", flagTaskRunnerURL)
 
 		os.Setenv("TASK_RUNNER_URL", flagTaskRunnerURL)
 
@@ -46,9 +47,15 @@ func init() {
 		if flagWorkflowPath == "" {
 			log.Fatal("workflow-path is mandatory")
 		}
+		// Get the DAG file name from the path
+		workflowPathSplit := strings.Split(flagWorkflowPath, "/")
+		DAGfileName := workflowPathSplit[len(workflowPathSplit)-1]
+		os.Setenv("DAG_FILE_NAME", strings.ToLower(regexp.MustCompile(`\.yaml`).ReplaceAllString(DAGfileName, "")))
+
 		if flagTaskRunnerURL == "" {
 			log.Fatal("`tr-url` parameter is mandatory")
 		}
+		log.Printf("Using the Task Runner url: %s", flagTaskRunnerURL)
 	}
 }
 
